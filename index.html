@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BM STORE - Kasir</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #EDE7DC; margin: 0; padding: 16px; color: #2B2620; }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    .subtitle { font-size: 12px; color: #8A7A5C; margin-bottom: 16px; }
+    .produk-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .produk-item { background: #F7F3EA; border: 1px solid #D8CFBB; border-radius: 8px; padding: 10px; text-align: left; }
+    .produk-item button { width: 100%; margin-top: 6px; padding: 6px; background: #2B2620; color: white; border: none; border-radius: 5px; font-size: 13px; }
+    .produk-nama { font-weight: bold; font-size: 14px; }
+    .produk-harga { font-size: 12px; color: #8A6D3B; }
+    .struk { background: white; border-radius: 8px; padding: 16px; font-family: 'Courier New', monospace; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .struk-judul { text-align: center; font-weight: bold; border-bottom: 1px dashed #999; padding-bottom: 10px; margin-bottom: 10px; }
+    .struk-item { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 8px; }
+    .struk-item .kontrol { display: flex; align-items: center; gap: 6px; }
+    .struk-item button { width: 22px; height: 22px; border: 1px solid #ccc; background: white; border-radius: 4px; }
+    .hapus-btn { color: #B0473E; border: none; background: none; font-size: 14px; }
+    .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; border-top: 1px dashed #999; padding-top: 10px; margin-top: 10px; }
+    .kasbon-box { margin-top: 12px; font-size: 13px; }
+    .kasbon-box input[type="text"] { width: 100%; padding: 6px; margin-top: 6px; border: 1px solid #ccc; border-radius: 5px; }
+    .selesai-btn { width: 100%; padding: 10px; margin-top: 12px; background: #2B2620; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; }
+    .kosong { text-align: center; color: #999; font-size: 12px; padding: 20px 0; }
+    .riwayat { background: white; border-radius: 8px; padding: 16px; margin-top: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .riwayat-judul { font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+    .riwayat-item { border-bottom: 1px solid #eee; padding: 8px 0; font-size: 12px; }
+    .riwayat-item:last-child { border-bottom: none; }
+    .riwayat-atas { display: flex; justify-content: space-between; font-weight: bold; }
+    .riwayat-detail { color: #8A7A5C; margin-top: 2px; }
+    .badge-kasbon { background: #F4E0C4; color: #8A6D3B; font-size: 10px; padding: 1px 6px; border-radius: 4px; margin-left: 6px; }
+    .aksi-struk { margin-top: 12px; }
+    .aksi-struk input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 5px; font-size: 12px; margin-bottom: 8px; }
+    .tombol-aksi { display: flex; gap: 8px; }
+    .aksi-btn { flex: 1; padding: 8px; border: 1px solid #2B2620; background: white; color: #2B2620; border-radius: 6px; font-size: 12px; font-weight: bold; }
+    .wa-btn { border-color: #25D366; color: #128C4A; }
+    @media print {
+      body * { visibility: hidden; }
+      .struk, .struk * { visibility: visible; }
+      .struk { position: absolute; top: 0; left: 0; width: 100%; box-shadow: none; }
+      .aksi-struk { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <h1>BM STORE</h1>
+  <div class="subtitle">Kasir Sederhana</div>
+  <div class="produk-list" id="daftarProduk"></div>
+  <div class="struk">
+    <div class="struk-judul">STRUK BELANJA</div>
+    <div id="isiStruk"><div class="kosong">Belum ada barang dipilih</div></div>
+    <div class="total-row"><span>TOTAL</span><span id="totalHarga">Rp 0</span></div>
+    <div class="kasbon-box">
+      <label><input type="checkbox" id="cekKasbon" onchange="toggleKasbon()"> Catat sebagai kasbon</label>
+      <input type="text" id="namaPelanggan" placeholder="Nama pelanggan" style="display:none">
+    </div>
+    <button class="selesai-btn" onclick="selesaikanTransaksi()">Selesaikan Transaksi</button>
+    <div class="aksi-struk">
+      <input type="text" id="nomorWA" placeholder="No. WA pembeli (opsional, cth: 08123456789)">
+      <button class="aksi-btn" style="margin-bottom:8px" onclick="pilihKontak()">📇 Pilih dari Kontak</button>
+      <div class="tombol-aksi">
+        <button class="aksi-btn" onclick="cetakStruk()">🖨️ Cetak Struk</button>
+        <button class="aksi-btn wa-btn" onclick="kirimWhatsApp()">📲 Kirim WA</button>
+      </div>
+    </div>
+  </div>
+  <div class="riwayat">
+    <div class="riwayat-judul">Riwayat Transaksi Hari Ini</div>
+    <div id="isiRiwayat"><div class="kosong">Belum ada transaksi</div></div>
+  </div>
+  <script>
+    const produk = [
+      { id: 1, nama: "Sampoerna Mild", harga: 28000 },
+      { id: 2, nama: "Gudang Garam", harga: 24000 },
+      { id: 3, nama: "Kopi Sachet", harga: 2500 },
+      { id: 4, nama: "Air Mineral", harga: 4000 },
+    ];
+    let keranjang = [];
+    let riwayat = [];
+    function tampilkanProduk() {
+      const container = document.getElementById("daftarProduk");
+      container.innerHTML = "";
+      produk.forEach(function (p) {
+        const div = document.createElement("div");
+        div.className = "produk-item";
+        div.innerHTML = '<div class="produk-nama">' + p.nama + '</div><div class="produk-harga">Rp ' + p.harga.toLocaleString('id-ID') + '</div><button onclick="tambahKeKeranjang(' + p.id + ')">+ Tambah</button>';
+        container.appendChild(div);
+      });
+    }
+    function tambahKeKeranjang(idProduk) {
+      const barang = produk.find(function (p) { return p.id === idProduk; });
+      const sudahAda = keranjang.find(function (item) { return item.id === idProduk; });
+      if (sudahAda) { sudahAda.qty = sudahAda.qty + 1; }
+      else { keranjang.push({ id: barang.id, nama: barang.nama, harga: barang.harga, qty: 1 }); }
+      perbaruiStruk();
+    }
+    function ubahQty(idProduk, perubahan) {
+      const item = keranjang.find(function (i) { return i.id === idProduk; });
+      if (!item) return;
+      item.qty = item.qty + perubahan;
+      if (item.qty <= 0) { keranjang = keranjang.filter(function (i) { return i.id !== idProduk; }); }
+      perbaruiStruk();
+    }
+    function hapusItem(idProduk) {
+      keranjang = keranjang.filter(function (i) { return i.id !== idProduk; });
+      perbaruiStruk();
+    }
+    function hitungTotal() {
+      let total = 0;
+      keranjang.forEach(function (item) { total = total + (item.harga * item.qty); });
+      return total;
+    }
+    function perbaruiStruk() {
+      const container = document.getElementById("isiStruk");
+      if (keranjang.length === 0) {
+        container.innerHTML = '<div class="kosong">Belum ada barang dipilih</div>';
+      } else {
+        container.innerHTML = "";
+        keranjang.forEach(function (item) {
+          const div = document.createElement("div");
+          div.className = "struk-item";
+          div.innerHTML = '<span>' + item.nama + '</span><div class="kontrol"><button onclick="ubahQty(' + item.id + ', -1)">-</button><span>' + item.qty + '</span><button onclick="ubahQty(' + item.id + ', 1)">+</button><button class="hapus-btn" onclick="hapusItem(' + item.id + ')">✕</button></div>';
+          container.appendChild(div);
+        });
+      }
+      const total = hitungTotal();
+      document.getElementById("totalHarga").innerText = "Rp " + total.toLocaleString('id-ID');
+    }
+    function toggleKasbon() {
+      const dicentang = document.getElementById("cekKasbon").checked;
+      document.getElementById("namaPelanggan").style.display = dicentang ? "block" : "none";
+    }
+    function selesaikanTransaksi() {
+      if (keranjang.length === 0) { alert("Belum ada barang yang dipilih."); return; }
+      const isKasbon = document.getElementById("cekKasbon").checked;
+      const namaPelanggan = document.getElementById("namaPelanggan").value;
+      if (isKasbon && namaPelanggan.trim() === "") { alert("Isi dulu nama pelanggan untuk kasbon."); return; }
+      const total = hitungTotal();
+      const waktu = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      riwayat.push({ waktu: waktu, items: keranjang.map(function (item) { return { nama: item.nama, qty: item.qty }; }), total: total, isKasbon: isKasbon, namaPelanggan: namaPelanggan });
+      if (isKasbon) { alert("Kasbon dicatat untuk " + namaPelanggan + "\nTotal: Rp " + total.toLocaleString('id-ID')); }
+      else { alert("Transaksi selesai!\nTotal: Rp " + total.toLocaleString('id-ID')); }
+      keranjang = [];
+      document.getElementById("cekKasbon").checked = false;
+      document.getElementById("namaPelanggan").value = "";
+      document.getElementById("namaPelanggan").style.display = "none";
+      perbaruiStruk();
+      tampilkanRiwayat();
+    }
+    function tampilkanRiwayat() {
+      const container = document.getElementById("isiRiwayat");
+      if (riwayat.length === 0) { container.innerHTML = '<div class="kosong">Belum ada transaksi</div>'; return; }
+      container.innerHTML = "";
+      riwayat.slice().reverse().forEach(function (trx) {
+        const daftarBarang = trx.items.map(function (i) { return i.nama + " x" + i.qty; }).join(", ");
+        const div = document.createElement("div");
+        div.className = "riwayat-item";
+        div.innerHTML = '<div class="riwayat-atas"><span>' + trx.waktu + (trx.isKasbon ? '<span class="badge-kasbon">KASBON - ' + trx.namaPelanggan + '</span>' : '') + '</span><span>Rp ' + trx.total.toLocaleString('id-ID') + '</span></div><div class="riwayat-detail">' + daftarBarang + '</div>';
+        container.appendChild(div);
+      });
+    }
+    async function pilihKontak() {
+      if (!("contacts" in navigator && "ContactsManager" in window)) {
+        alert("Fitur pilih kontak belum didukung di sini.\n\nIni biasanya karena:\n1. Halaman dibuka langsung dari file HP, atau\n2. Browser bukan Chrome versi baru.\n\nIsi nomor WA manual saja di kolom di atas.");
+        return;
+      }
+      try {
+        const kontak = await navigator.contacts.select(["name", "tel"], { multiple: false });
+        if (kontak.length > 0 && kontak[0].tel.length > 0) { document.getElementById("nomorWA").value = kontak[0].tel[0]; }
+        else { alert("Kontak yang dipilih tidak punya nomor telepon."); }
+      } catch (error) {
+        console.error("Gagal membuka kontak:", error);
+        alert("Gagal membuka daftar kontak. Coba isi manual saja.");
+      }
+    }
+    function cetakStruk() {
+      if (keranjang.length === 0) { alert("Belum ada barang di struk untuk dicetak."); return; }
+      window.print();
+    }
+    function kirimWhatsApp() {
+      if (keranjang.length === 0) { alert("Belum ada barang di struk untuk dikirim."); return; }
+      let nomor = document.getElementById("nomorWA").value.trim();
+      if (nomor === "") { alert("Isi dulu nomor WA pembeli."); return; }
+      nomor = nomor.replace(/[^0-9]/g, "");
+      if (nomor.startsWith("0")) { nomor = "62" + nomor.slice(1); }
+      let baris = [];
+      baris.push("BM STORE");
+      baris.push("Struk Belanja");
+      baris.push("------------------------");
+      keranjang.forEach(function (item) {
+        const subtotal = item.harga * item.qty;
+        const namaBarang = (item.nama + " x" + item.qty).padEnd(16, " ");
+        const hargaBarang = subtotal.toLocaleString('id-ID').padStart(8, " ");
+        baris.push(namaBarang + hargaBarang);
+      });
+      baris.push("------------------------");
+      baris.push("TOTAL".padEnd(16, " ") + hitungTotal().toLocaleString('id-ID').padStart(8, " "));
+      const teks = "```\n" + baris.join("\n") + "\n```";
+      window.open("https://wa.me/" + nomor + "?text=" + encodeURIComponent(teks), "_blank");
+    }
+    tampilkanProduk();
+    perbaruiStruk();
+    tampilkanRiwayat();
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(function (err) { console.log('Service worker gagal daftar:', err); });
+    }
+  </script>
+</body>
+</html>
