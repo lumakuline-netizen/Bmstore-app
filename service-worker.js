@@ -1,9 +1,9 @@
 const NAMA_CACHE = 'bmstore-cache-v1';
 
 const FILE_PENTING = [
-  '/bmstore-app/',
-  '/bmstore-app/index.html',
-  '/bmstore-app/manifest.json',
+  '/Bmstore-app/',
+  '/Bmstore-app/index.html',
+  '/Bmstore-app/manifest.json',
 ];
 
 self.addEventListener('install', (event) => {
